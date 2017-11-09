@@ -125,11 +125,18 @@ module SVar
       if block
         case init
         when :immediate
-          # A COMPLETER.
+          @value = block.call
+          @state = :full
         when :frozen
-          # A COMPLETER.
+          @state = :frozen
+          @block = block
         when :async
-          # A COMPLETER.
+          mutex.synchronize do
+            @state = :in_evaluation
+            th = Thread.new {@value = @block.call}.start
+            th.join
+            @state = :full
+          end
         else
           DBC.assert( false, "Cas impossible: type = #{type}" )
         end
@@ -137,6 +144,7 @@ module SVar
         DBC.require( type == :write_once || type == :mutable,
                      "*** Si pas de bloc d'initialisation, alors doit etre :write_once ou :mutable" )
         # A COMPLETER.
+        #@state = :empty
       end
     end
 
@@ -205,7 +213,12 @@ module SVar
     # @ensure L'appel est bloque si l'etat pas full?
     #
     def value
-      # A COMPLETER.
+      mutex.synchronize do
+        eval if @state == :frozen
+        @is_full.wait(mutex) until full?
+      end
+
+      @value
     end
 
 
@@ -222,7 +235,14 @@ module SVar
     #         en cours ou completee, alors l'appel n'a aucun effet (no-op).
     #
     def eval
-      # A COMPLETER.
+      mutex.synchronize do
+        if @state == :frozen
+          @state = :in_evaluation
+          @value = @block.call
+          @state = :full
+        end
+      end
+
     end
 
     #
