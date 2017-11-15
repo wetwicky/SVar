@@ -130,7 +130,7 @@ module SVar
             # Evaluation de la valeur
             @value = block.call
             @state = :full
-            # On signal que la valeur de la var est calculé
+            # On signal que la valeur de la var est disponible
             is_full.signal
           end
         when :frozen
@@ -150,7 +150,7 @@ module SVar
             # On attend le resultat
             th.join
             @state = :full
-            # On signal que la valeur de la var est calculé
+            # On signal que la valeur de la var est disponible
             is_full.signal
           end
         else
@@ -159,8 +159,10 @@ module SVar
       else
         DBC.require( type == :write_once || type == :mutable,
                      "*** Si pas de bloc d'initialisation, alors doit etre :write_once ou :mutable" )
-        # A COMPLETER.
-        #@state = :empty
+        # La variable est vide et attend de recevoir un bloc
+        mutex.synchronize do
+          @state = :empty
+        end
       end
     end
 
