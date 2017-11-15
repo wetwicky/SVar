@@ -125,17 +125,33 @@ module SVar
       if block
         case init
         when :immediate
-          @value = block.call
-          @state = :full
-        when :frozen
-          @state = :frozen
-          @block = block
-        when :async
+          # Valeur obtenue immédiatement
           mutex.synchronize do
+            # Evaluation de la valeur
+            @value = block.call
+            @state = :full
+            # On signal que la valeur de la var est calculé
+            is_full.signal
+          end
+        when :frozen
+          # Valeur obtenue plus tard
+          mutex.synchronize do
+            @state = :frozen
+            # On stocke le block pour quand l'évaluation sera voulue
+            @block = block
+          end
+        when :async
+          # Valeur obtenue dès que possible
+          mutex.synchronize do
+            # On change temporairment le status de la var en cours d'évaluation
             @state = :in_evaluation
+            # On lance un thread qui va effectuer l'évaluation
             th = Thread.new {@value = @block.call}.start
+            # On attend le resultat
             th.join
             @state = :full
+            # On signal que la valeur de la var est calculé
+            is_full.signal
           end
         else
           DBC.assert( false, "Cas impossible: type = #{type}" )
