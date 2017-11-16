@@ -287,7 +287,7 @@ module SVar
     #         *asynchrone*, si pas deja evaluee.
     #
     def then
-      SVar.new( write_once, :async, yield(value))
+      SVar.new( :write_once, :async) { yield(value) }
     end
   end
 
