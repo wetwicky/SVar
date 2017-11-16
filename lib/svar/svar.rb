@@ -1,4 +1,4 @@
-@mutex#
+#
 # Module pour mettre en oeuvre des variables synchronisees, telles que
 # decrites dans l'enonce du devoir 2, INF5171-20, automne 2017.
 #
