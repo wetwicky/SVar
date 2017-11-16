@@ -340,7 +340,12 @@ module SVar
     # @ensure full?
     #
     def mutate!
-      # A COMPLETER.
+      mutex.synchronize do
+        @is_full.wait( mutex ) until full?
+        @value = yield
+      end
+
+      @value
     end
   end
 end
