@@ -306,9 +306,13 @@ module SVar
     # @ensure full?
     #
     def value=( v )
+
       if empty?
-        @value = v
-        @state = :full
+        @mutex.synchronize do
+          @value = v
+          @state = :full
+          @is_full.broadcast
+        end
       else
         DBC.assert(false,"ERREUR, la valeur n'est pas :empty, @state = @{state} ")
       end
