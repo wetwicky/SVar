@@ -131,7 +131,7 @@ module SVar
             @value = block.call
             @state = :full
             # On signal que la valeur de la var est disponible
-            @is_full.signal
+            @is_full.broadcast
           end
         when :frozen
           # Valeur obtenue plus tard
@@ -147,13 +147,13 @@ module SVar
             @state = :in_evaluation
             # On lance un thread qui va effectuer l'évaluation
             @block = block
-            th = Thread.new {@value = @block.call}
-            # On attend le resultat
-            th.join
-            @state = :full
-            @block = nil
-            # On signal que la valeur de la var est disponible
-            @is_full.signal
+            Thread.new do
+              @value = @block.call
+              @state = :full
+              @block = nil
+              # On signal que la valeur de la var est disponible
+              @is_full.broadcast
+            end
           end
         else
           DBC.assert( false, "Cas impossible: type = #{type}" )
@@ -259,13 +259,13 @@ module SVar
         if @state == :frozen
           @state = :in_evaluation
           # On lance un thread qui va effectuer l'évaluation
-          th = Thread.new {@value = @block.call}.start
-          # On attend le resultat
-          th.join
-          @state = :full
-          @block = nil
-          # On signal que la valeur de la var est disponible
-          @is_full.signal
+          Thread.new do
+            @value = @block.call
+            @state = :full
+            @block = nil
+            # On signal que la valeur de la var est disponible
+            @is_full.broadcast
+          end
         else
           DBC.assert( false, "l'etat doit etre :frozen et @state = #{state}" )
         end
@@ -306,7 +306,12 @@ module SVar
     # @ensure full?
     #
     def value=( v )
-      @value = v if empty?
+      if empty?
+        @value = v
+        @state = :full
+      else
+        DBC.assert(false,"ERREUR, la valeur n'est pas :empty, @state = @{state} ")
+      end
     end
   end
 
