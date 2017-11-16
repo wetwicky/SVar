@@ -1,4 +1,4 @@
-#
+@mutex#
 # Module pour mettre en oeuvre des variables synchronisees, telles que
 # decrites dans l'enonce du devoir 2, INF5171-20, automne 2017.
 #
@@ -126,7 +126,7 @@ module SVar
         case init
         when :immediate
           # Valeur obtenue immédiatement
-          mutex.synchronize do
+          @mutex.synchronize do
             # Evaluation de la valeur
             @value = block.call
             @state = :full
@@ -135,14 +135,14 @@ module SVar
           end
         when :frozen
           # Valeur obtenue plus tard
-          mutex.synchronize do
+          @mutex.synchronize do
             @state = :frozen
             # On stocke le block pour quand l'évaluation sera voulue
             @block = block
           end
         when :async
           # Valeur obtenue dès que possible
-          mutex.synchronize do
+          @mutex.synchronize do
             # On change temporairment le status de la var en cours d'évaluation
             @state = :in_evaluation
             # On lance un thread qui va effectuer l'évaluation
@@ -160,7 +160,7 @@ module SVar
         DBC.require( type == :write_once || type == :mutable,
                      "*** Si pas de bloc d'initialisation, alors doit etre :write_once ou :mutable" )
         # La variable est vide et attend de recevoir un bloc
-        mutex.synchronize do
+        @mutex.synchronize do
           @state = :empty
         end
       end
@@ -231,9 +231,9 @@ module SVar
     # @ensure L'appel est bloque si l'etat pas full?
     #
     def value
-      mutex.synchronize do
         eval if @state == :frozen
         @is_full.wait(mutex) until full?
+      @mutex.synchronize do
       end
 
       @value
@@ -253,7 +253,7 @@ module SVar
     #         en cours ou completee, alors l'appel n'a aucun effet (no-op).
     #
     def eval
-      mutex.synchronize do
+      @mutex.synchronize do
         if @state == :frozen
           @state = :in_evaluation
           @value = @block.call
@@ -277,10 +277,7 @@ module SVar
     #         *asynchrone*, si pas deja evaluee.
     #
     def then
-      mutex.synchronize do
-        @is_full.wait( mutex ) until full?
-        SVar.new( :async, yield( @value ) )
-      end
+      SVar.new( write_once, :async, yield(value))
     end
   end
 
@@ -317,8 +314,8 @@ module SVar
     # @ensure empty?
     #
     def take
-      mutex.synchronize do
-        @is_full.wait( mutex ) until full?
+      @mutex.synchronize do
+        @is_full.wait( @mutex ) until full?
         taken = @value
         @value = nil
         @state = :empty
@@ -340,7 +337,7 @@ module SVar
     # @ensure full?
     #
     def mutate!
-      mutex.synchronize do
+      @mutex.synchronize do
         @is_full.wait( mutex ) until full?
         @value = yield
       end
