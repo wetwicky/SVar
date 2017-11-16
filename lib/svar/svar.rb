@@ -298,7 +298,7 @@ module SVar
     # @ensure full?
     #
     def value=( v )
-      # A COMPLETER.
+      @value = v if empty?
     end
   end
 
