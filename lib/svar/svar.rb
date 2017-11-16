@@ -131,7 +131,7 @@ module SVar
             @value = block.call
             @state = :full
             # On signal que la valeur de la var est disponible
-            is_full.signal
+            @is_full.signal
           end
         when :frozen
           # Valeur obtenue plus tard
@@ -151,7 +151,7 @@ module SVar
             th.join
             @state = :full
             # On signal que la valeur de la var est disponible
-            is_full.signal
+            @is_full.signal
           end
         else
           DBC.assert( false, "Cas impossible: type = #{type}" )
@@ -232,8 +232,8 @@ module SVar
     #
     def value
         eval if @state == :frozen
-        @is_full.wait(mutex) until full?
       @mutex.synchronize do
+        @is_full.wait(@mutex) until full?
       end
 
       @value
