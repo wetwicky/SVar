@@ -256,7 +256,8 @@ module SVar
     #
     def eval
       @mutex.synchronize do
-        if @state == :frozen
+        case @state
+        when :frozen
           @state = :in_evaluation
           # On lance un thread qui va effectuer l'évaluation
           Thread.new do
@@ -266,12 +267,10 @@ module SVar
             # On signal que la valeur de la var est disponible
             @is_full.broadcast
           end
-        else
-          DBC.assert( false, "l'etat doit etre :frozen et @state = #{state}" )
+        when :empty
+          raise "Erreur, eval ne fonctionne pas avec un etat :empty"
         end
-
       end
-      nil
     end
 
     #
@@ -334,14 +333,11 @@ module SVar
     # @ensure empty?
     #
     def take
-      taken = nil
+      taken = value
       @mutex.synchronize do
-        @is_full.wait( @mutex ) until full?
-        taken = @value
         @value = nil
         @state = :empty
       end
-
       taken
     end
 
