@@ -317,7 +317,14 @@ module SVar
     # @ensure empty?
     #
     def take
-      # A COMPLETER.
+      mutex.synchronize do
+        @is_full.wait( mutex ) until full?
+        taken = @value
+        @value = nil
+        @state = :empty
+      end
+
+      taken
     end
 
     #
