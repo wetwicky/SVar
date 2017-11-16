@@ -277,7 +277,10 @@ module SVar
     #         *asynchrone*, si pas deja evaluee.
     #
     def then
-      # A COMPLETER.
+      mutex.synchronize do
+        @is_full.wait( mutex ) until full?
+        SVar.new( :async, yield( @value ) )
+      end
     end
   end
 
@@ -334,4 +337,3 @@ module SVar
     end
   end
 end
-
