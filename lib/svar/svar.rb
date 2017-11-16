@@ -334,6 +334,7 @@ module SVar
     # @ensure empty?
     #
     def take
+      taken = nil
       @mutex.synchronize do
         @is_full.wait( @mutex ) until full?
         taken = @value
@@ -358,8 +359,8 @@ module SVar
     #
     def mutate!
       @mutex.synchronize do
-        @is_full.wait( mutex ) until full?
-        @value = yield
+        @is_full.wait( @mutex ) until full?
+        @value = yield(@value)
       end
     end
   end
