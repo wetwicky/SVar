@@ -146,10 +146,12 @@ module SVar
             # On change temporairment le status de la var en cours d'évaluation
             @state = :in_evaluation
             # On lance un thread qui va effectuer l'évaluation
-            th = Thread.new {@value = @block.call}.start
+            @block = block
+            th = Thread.new {@value = @block.call}
             # On attend le resultat
             th.join
             @state = :full
+            @block = nil
             # On signal que la valeur de la var est disponible
             @is_full.signal
           end
@@ -231,7 +233,7 @@ module SVar
     # @ensure L'appel est bloque si l'etat pas full?
     #
     def value
-        eval if @state == :frozen
+      eval if @state == :frozen
       @mutex.synchronize do
         @is_full.wait(@mutex) until full?
       end
@@ -256,11 +258,20 @@ module SVar
       @mutex.synchronize do
         if @state == :frozen
           @state = :in_evaluation
-          @value = @block.call
+          # On lance un thread qui va effectuer l'évaluation
+          th = Thread.new {@value = @block.call}.start
+          # On attend le resultat
+          th.join
           @state = :full
+          @block = nil
+          # On signal que la valeur de la var est disponible
+          @is_full.signal
+        else
+          DBC.assert( false, "l'etat doit etre :frozen et @state = #{state}" )
         end
-      end
 
+      end
+      nil
     end
 
     #
@@ -341,8 +352,6 @@ module SVar
         @is_full.wait( mutex ) until full?
         @value = yield
       end
-
-      @value
     end
   end
 end
