@@ -52,7 +52,23 @@ module Wavefront
   # lieu de each.
   #
   def self.run_par( n )
-    # A COMPLETER.
+    m = Matrice.new( n, n )
+
+    # Cas de base: 1ere ligne et 1ere colonne.
+    (0...n).peach do |k|
+      m[k, 0] = SVar.new { 1 }
+      m[0, k] = SVar.new { 1 }
+    end
+    (1...n).peach do |row|
+      (1...n).peach do |col| #peach vs each ...
+        # on retarde l'evaluation pour remplir la matrice avec des SVar
+        m[row, col] = SVar.new(:write_once,:frozen) do
+          m[row-1, col].value + m[row-1, col-1].value + m[row, col-1].value
+        end
+      end
+    end
+    # l'évaluation est lancé  en allant recupéré la valeur
+    m.to_a.pmap { |row| row.map { |e| e.value } } #m.collect { |e| e.value }.to_a
   end
 
   #
