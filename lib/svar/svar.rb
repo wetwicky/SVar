@@ -95,9 +95,8 @@ module SVar
     (0...svars.size).each { |index| Thread.new {val = svars[index].value; is_ready.signal } }
     mutex.synchronize do
       is_ready.wait(mutex) while val == nil
+      self.new { val }
     end
-
-    self.new { val }
   end
 
   #

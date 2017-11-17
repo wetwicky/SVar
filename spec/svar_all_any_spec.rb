@@ -73,8 +73,7 @@ describe SVar::SVarWritable do
       sv = SVar.any( sv1, sv2, sv3 )
 
       v = nil
-      #lambda { v = sv.value }.must_be_delayed( DELAY / 2.0 )
-      v = sv.value
+      lambda { v = sv.value }.must_be_delayed( DELAY / 2.0 )
       v.must_equal 2
     end
 
@@ -83,8 +82,7 @@ describe SVar::SVarWritable do
       svs = (0..n).map { |k| SVar.new { k } }
 
       v = nil
-      #lambda { v = SVar.any( *svs ).value }.wont_be_delayed
-      v = SVar.any( *svs ).value
+      lambda { v = SVar.any( *svs ).value }.wont_be_delayed
       assert [*0..n].include?(v)
     end
 
@@ -93,8 +91,7 @@ describe SVar::SVarWritable do
       svs = (0..n).map { |k| SVar.new { sleep DELAY; k } }
 
       v = nil
-      #lambda { v = SVar.any( *svs ).value }.must_be_delayed(DELAY)
-      v = SVar.any( *svs ).value
+      lambda { v = SVar.any( *svs ).value }.must_be_delayed(DELAY)
       assert [*0..n].include?(v)
     end
   end
