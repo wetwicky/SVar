@@ -166,10 +166,15 @@ class NoeudPar < Noeud
   # Indice pour optimisation possible: Double-check!
   def marquer!
     # A COMPLETER.
+    marque = @marque.take
+    @marque.mutate! { true }
+
+    marque
   end
 
   def reset_marque
     # A COMPLETER.
+    @marque.mutate! { false }
   end
 
   #
@@ -186,6 +191,16 @@ class NoeudPar < Noeud
   #
   def somme
     # A COMPLETER.
+    if marquer!
+      # Deja marque, donc on ne le visite pas.
+      0
+    else
+      # Pas marque: on visite les voisins pour calculer leur somme, a
+      # laquelle on ajoute la valeur du noeud courant.
+      @voisins
+        .pmap { |v| @graphe[v] }
+        .pmap(&:somme)
+        .reduce(@val, :+)
+    end
   end
 end
-
