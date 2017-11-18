@@ -68,7 +68,7 @@ module Wavefront
       end
     end
     # l'évaluation est lancé  en allant recupéré la valeur
-    m.to_a.pmap { |row| row.map { |e| e.value } } #m.collect { |e| e.value }.to_a
+    m.to_a.pmap { |row| row.pmap { |e| e.value } } #m.collect { |e| e.value }.to_a
   end
 
   #
