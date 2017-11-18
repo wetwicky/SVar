@@ -93,15 +93,15 @@ module SVar
     is_ready = ConditionVariable.new
     self.new( :write_once, :async ) do
       res = nil
-      (0...svars.size).each do |index|
+      svars.each do |sv|
         Thread.new do
           mutex.synchronize do
-              res = svars[index].value
-              is_ready.signal
+            res = sv.value if res == nil #afin d'assigner qu'une seule fois
+            is_ready.signal
           end
         end
         mutex.synchronize do
-          is_ready.wait(mutex)
+          is_ready.wait(mutex) if res == nil #afin de continuer si deja arrivé
         end
       end
       res
