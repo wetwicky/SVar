@@ -89,13 +89,22 @@ module SVar
   #
   def self.any( *svars )
     DBC.require( svars.size >= 1, "*** Il doit y avoir au moins un argument" )
-    val = nil
     mutex = Mutex.new
     is_ready = ConditionVariable.new
-    (0...svars.size).each { |index| Thread.new {val = svars[index].value; is_ready.signal } }
-    mutex.synchronize do
-      is_ready.wait(mutex) while val == nil
-      self.new { val }
+    self.new( :write_once, :async ) do
+      res = nil
+      (0...svars.size).each do |index|
+        Thread.new do
+          mutex.synchronize do
+              res = svars[index].value
+              is_ready.signal
+          end
+        end
+        mutex.synchronize do
+          is_ready.wait(mutex)
+        end
+      end
+      res
     end
   end
 
