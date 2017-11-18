@@ -96,13 +96,14 @@ module SVar
       svars.each do |sv|
         Thread.new do
           mutex.synchronize do
-            res = sv.value if res == nil #afin d'assigner qu'une seule fois
+            val = sv.value
+            res = val if res == nil #afin d'assigner qu'une seule fois
             is_ready.signal
           end
         end
-        mutex.synchronize do
-          is_ready.wait(mutex) if res == nil #afin de continuer si deja arrivé
-        end
+      end
+      mutex.synchronize do
+        is_ready.wait(mutex) if res == nil #afin de continuer si deja arrivé
       end
       res
     end
@@ -319,15 +320,14 @@ module SVar
     # @ensure full?
     #
     def value=( v )
-
-      if empty?
-        @mutex.synchronize do
-          @value = v
-          @state = :full
-          @is_full.broadcast
+      @mutex.synchronize do
+        if empty?
+            @value = v
+            @state = :full
+            @is_full.broadcast
+        else
+          DBC.assert(false,"ERREUR, la valeur n'est pas :empty, @state = #{state} ")
         end
-      else
-        DBC.assert(false,"ERREUR, la valeur n'est pas :empty, @state = @{state} ")
       end
     end
   end
@@ -351,8 +351,8 @@ module SVar
       @mutex.synchronize do
         @value = nil
         @state = :empty
+        taken
       end
-      taken
     end
 
     #
@@ -369,8 +369,12 @@ module SVar
     #
     def mutate!
       @mutex.synchronize do
+
         @is_full.wait( @mutex ) until full?
+        @state = :in_evaluation
         @value = yield(@value)
+        @state = :full
+        @is_full.broadcast
       end
     end
   end
