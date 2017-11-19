@@ -2,3 +2,5 @@
 \.idea/
 
 spec/
+
+\.rake_tasks~
