@@ -89,21 +89,22 @@ module SVar
   #
   def self.any( *svars )
     DBC.require( svars.size >= 1, "*** Il doit y avoir au moins un argument" )
-    mutex = Mutex.new
-    is_ready = ConditionVariable.new
     self.new( :write_once, :async ) do
+      mutex = Mutex.new
+      is_ready = ConditionVariable.new
       res = nil
+
       svars.each do |sv|
         Thread.new do
+          sv.eval
           mutex.synchronize do
-            val = sv.value
-            res = val if res == nil #afin d'assigner qu'une seule fois
+            res = sv.value if res == nil #afin d'assigner qu'une seule fois
             is_ready.signal
           end
         end
       end
       mutex.synchronize do
-        is_ready.wait(mutex) if res == nil #afin de continuer si deja arrivé
+        is_ready.wait(mutex) while res.nil? #afin de continuer si deja arrivé
       end
       res
     end
@@ -141,31 +142,30 @@ module SVar
         case init
         when :immediate
           # Valeur obtenue immédiatement
-          @mutex.synchronize do
+          #@mutex.synchronize do
             # Evaluation de la valeur
-            @value = block.call
+            @value = yield
             @state = :full
             # On signal que la valeur de la var est disponible
             @is_full.broadcast
-          end
+          #end
         when :frozen
           # Valeur obtenue plus tard
-          @mutex.synchronize do
+          #@mutex.synchronize do
             @state = :frozen
             # On stocke le block pour quand l'évaluation sera voulue
             @block = block
-          end
+          #end
         when :async
           # Valeur obtenue dès que possible
-          @mutex.synchronize do
-            # On change temporairment le status de la var en cours d'évaluation
-            @state = :in_evaluation
-            # On lance un thread qui va effectuer l'évaluation
-            @block = block
-            Thread.new do
-              @value = @block.call
+
+          # On change temporairment le status de la var en cours d'évaluation
+          @state = :in_evaluation
+          # On lance un thread qui va effectuer l'évaluation
+          Thread.new do
+            @mutex.synchronize do
+              @value = yield
               @state = :full
-              @block = nil
               # On signal que la valeur de la var est disponible
               @is_full.broadcast
             end
@@ -177,9 +177,9 @@ module SVar
         DBC.require( type == :write_once || type == :mutable,
                      "*** Si pas de bloc d'initialisation, alors doit etre :write_once ou :mutable" )
         # La variable est vide et attend de recevoir un bloc
-        @mutex.synchronize do
+        #@mutex.synchronize do
           @state = :empty
-        end
+        #end
       end
     end
 
@@ -270,21 +270,22 @@ module SVar
     #         en cours ou completee, alors l'appel n'a aucun effet (no-op).
     #
     def eval
-      @mutex.synchronize do
-        case @state
-        when :frozen
-          @state = :in_evaluation
-          # On lance un thread qui va effectuer l'évaluation
-          Thread.new do
+
+      case @state
+      when :frozen
+        @state = :in_evaluation
+        # On lance un thread qui va effectuer l'évaluation
+        Thread.new do
+          @mutex.synchronize do
             @value = @block.call
             @state = :full
             @block = nil
             # On signal que la valeur de la var est disponible
             @is_full.broadcast
           end
-        when :empty
-          raise "Erreur, eval ne fonctionne pas avec un etat :empty"
         end
+      when :empty
+        raise "Erreur, eval ne fonctionne pas avec un etat :empty"
       end
     end
 
@@ -325,6 +326,7 @@ module SVar
             @value = v
             @state = :full
             @is_full.broadcast
+            @value
         else
           DBC.assert(false,"ERREUR, la valeur n'est pas :empty, @state = #{state} ")
         end
