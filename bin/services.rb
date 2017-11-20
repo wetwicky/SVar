@@ -87,7 +87,28 @@ class TraiterRequeteThread
   #
   def self.run( produit, qte_desiree, id_usager )
     # A COMPLETER.
-
+    mutex = Mutex.new
+    is_assign = ConditionVariable.new
+    prix_qte, fournisseur, agence = nil, nil, nil
+    th1 = Thread.new do
+      mutex.synchronize do
+        prix_qte, fournisseur = FOURNISSEURS
+          .map { |k| externes.prix_et_qte_disponible( k, produit, qte_desiree ) }
+          .select { |prix, qte| qte >= qte_desiree }
+          .each_with_index.min_by { |x| x.first.first }
+        is_assign.signal
+      end
+    end
+    th2 = Thread.new do
+      mutex.synchronize do
+        is_assign.wait(mutex) while prix_qte == nil
+        agence = AGENCES.find do |a|
+          externes.paiement_ok?(a, id_usager, prix_qte.first * prix_qte.last)
+        end
+      end
+    end
+    th1.join
+    th2.join
     [fournisseur, prix_qte.first, agence]
   end
 end
