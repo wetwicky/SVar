@@ -96,16 +96,18 @@ module SVar
 
       svars.each do |sv|
         Thread.new do
-          sv.eval
+          val = sv.value
           mutex.synchronize do
-            res = sv.value if res == nil #afin d'assigner qu'une seule fois
+            res = val if res == nil #afin d'assigner qu'une seule fois
             is_ready.signal
           end
         end
       end
+
       mutex.synchronize do
-        is_ready.wait(mutex) while res.nil? #afin de continuer si deja arrivé
+        is_ready.wait(mutex) while res.nil?
       end
+
       res
     end
   end
