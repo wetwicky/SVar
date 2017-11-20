@@ -104,8 +104,18 @@ class TraiterRequeteSVar
   # aussitot que l'une d'entre elles repond positivement.
   #
   def self.run( produit, qte_desiree, id_usager )
-    # A COMPLETER.
+    sv = SVar.new do
+      FOURNISSEURS
+      .map { |k| externes.prix_et_qte_disponible( k, produit, qte_desiree ) }
+      .select { |prix, qte| qte >= qte_desiree }
+      .each_with_index.min_by { |x| x.first.first }
+    end
+    agence = SVar.new do
+      AGENCES.find do |a|
+        externes.paiement_ok?(a, id_usager, sv.value.first.first * sv.value.first.last)
+      end
+    end
 
-    [fournisseur, prix_qte.first, agence]
+    [sv.value.last, sv.value.first.first, agence.value]
   end
 end
