@@ -250,7 +250,10 @@ module SVar
     # @ensure L'appel est bloque si l'etat pas full?
     #
     def value
+      # Lance l'evaluation uniquement si la variable est frozen
       eval if @state == :frozen
+
+      # Attend que la valeur de la variable soit disponible
       @mutex.synchronize do
         @is_full.wait(@mutex) until full?
       end
@@ -323,14 +326,12 @@ module SVar
     # @ensure full?
     #
     def value=( v )
-      @mutex.synchronize do
-        if empty?
-            @value = v
-            @state = :full
-            @is_full.broadcast
-            @value
-        else
-          DBC.assert(false,"ERREUR, la valeur n'est pas :empty, @state = #{state} ")
+      if empty?
+        @mutex.synchronize do
+          @value = v
+          @state = :full
+          # On lance un broadcast car il peut y avoir plusieurs threads qui attendent et veulent juste lire
+          @is_full.broadcast
         end
       end
     end
