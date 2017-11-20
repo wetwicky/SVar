@@ -167,7 +167,7 @@ class NoeudPar < Noeud
   def marquer!
     # A COMPLETER.
     marque = @marque.take
-    @marque.mutate! { true }
+    @marque.value = true
 
     marque
   end

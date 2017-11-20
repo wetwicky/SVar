@@ -352,7 +352,7 @@ module SVar
     # @ensure empty?
     #
     def take
-      taken = value
+      taken = value # value bloque jusqu'a l'obtention de la valeur
       @mutex.synchronize do
         @value = nil
         @state = :empty
