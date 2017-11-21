@@ -333,8 +333,8 @@ module SVar
           # On lance un broadcast car il peut y avoir plusieurs threads qui attendent et veulent juste lire
           @is_full.broadcast
         end
-      else
-        DBC.assert(false,"ERREUR, la valeur n'est pas :empty, @state = #{state} ")
+      elsif @type != :read_only && (@value != nil || @state == :frozen)
+        raise "Error! valeur deja assignee"
       end
     end
   end
@@ -382,6 +382,7 @@ module SVar
         @value = yield(@value)
         @state = :full
         @is_full.broadcast
+        @value
       end
       
       @value
