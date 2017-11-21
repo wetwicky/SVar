@@ -333,6 +333,8 @@ module SVar
           # On lance un broadcast car il peut y avoir plusieurs threads qui attendent et veulent juste lire
           @is_full.broadcast
         end
+      elsif @type == :write_once && @value != nil
+        raise "Error! valeur deja assignee"
       end
     end
   end
