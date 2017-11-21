@@ -333,7 +333,7 @@ module SVar
           # On lance un broadcast car il peut y avoir plusieurs threads qui attendent et veulent juste lire
           @is_full.broadcast
         end
-      elsif @type == :write_once && @value != nil
+      elsif @type != :read_only && (@value != nil || @state == :frozen)
         raise "Error! valeur deja assignee"
       end
     end
@@ -377,11 +377,12 @@ module SVar
     def mutate!
       @mutex.synchronize do
 
-        @is_full.wait( @mutex ) until full?
+        @is_full.wait( @mutex ) until full? || empty?
         @state = :in_evaluation
         @value = yield(@value)
         @state = :full
         @is_full.broadcast
+        @value
       end
     end
   end
