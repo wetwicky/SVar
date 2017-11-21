@@ -41,13 +41,14 @@ module SVar
     Debug.debug "#{self}.new( #{type}, #{init}, #{block} )", 1
 
     DBC.check_value( type, SVAR_TYPES,
-                     "Dans #{self}.new: Argument type incorrect = #{type.inspect}" )
+                "Dans #{self}.new: Argument type incorrect = #{type.inspect}" )
     DBC.check_value( init, MODES_INIT,
-                     "Dans #{self}.new: Argument init incorrect = #{init.inspect}" )
+                "Dans #{self}.new: Argument init incorrect = #{init.inspect}" )
 
     case type
     when :read_only
-      DBC.require( block, "Un bloc doit etre specifie pour une variable :read_only" )
+      DBC.require( block, "Un bloc doit etre specifie pour une variable "\
+                          ":read_only" )
       SVar.new( type, init, &block )
     when :write_once
       SVarWritable.new( type, init, &block )
@@ -177,7 +178,8 @@ module SVar
         end
       else
         DBC.require( type == :write_once || type == :mutable,
-                     "*** Si pas de bloc d'initialisation, alors doit etre :write_once ou :mutable" )
+                     "*** Si pas de bloc d'initialisation, "\
+                     "alors doit etre :write_once ou :mutable" )
         # La variable est vide et attend de recevoir un bloc
         #@mutex.synchronize do
           @state = :empty
@@ -330,7 +332,8 @@ module SVar
         @mutex.synchronize do
           @value = v
           @state = :full
-          # On lance un broadcast car il peut y avoir plusieurs threads qui attendent et veulent juste lire
+          # On lance un broadcast car il peut y avoir plusieurs threads
+          # qui attendent et veulent juste lire
           @is_full.broadcast
         end
       elsif @type != :read_only && (@value != nil || @state == :frozen)

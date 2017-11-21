@@ -93,9 +93,9 @@ class TraiterRequeteThread
     th1 = Thread.new do
       mutex.synchronize do
         prix_qte, fournisseur = FOURNISSEURS
-          .map { |k| externes.prix_et_qte_disponible( k, produit, qte_desiree ) }
-          .select { |prix, qte| qte >= qte_desiree }
-          .each_with_index.min_by { |x| x.first.first }
+         .map { |k| externes.prix_et_qte_disponible( k, produit, qte_desiree ) }
+         .select { |prix, qte| qte >= qte_desiree }
+         .each_with_index.min_by { |x| x.first.first }
         is_assign.signal
       end
     end
@@ -133,7 +133,9 @@ class TraiterRequeteSVar
     end
     agence = SVar.new do
       AGENCES.find do |a|
-        externes.paiement_ok?(a, id_usager, sv.value.first.first * sv.value.first.last)
+        externes.paiement_ok?( a,
+                               id_usager,
+                               sv.value.first.first * sv.value.first.last)
       end
     end
 
