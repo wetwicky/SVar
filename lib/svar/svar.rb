@@ -383,6 +383,8 @@ module SVar
         @state = :full
         @is_full.broadcast
       end
+      
+      @value
     end
   end
 end
