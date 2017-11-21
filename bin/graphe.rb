@@ -157,17 +157,22 @@ end
 
 # Version de Noeud utilisable de facon parallele.
 class NoeudPar < Noeud
+
   def initialize( id, val, graphe, voisins )
     super
     @marque = SVar.new(:mutable)
     @marque.value = false
+    @mutex = Mutex.new
   end
 
   # Indice pour optimisation possible: Double-check!
   def marquer!
     # A COMPLETER.
-    marque = @marque.take
-    @marque.mutate! { true }
+    marque = nil
+    @mutex.synchronize do
+      marque = @marque.take
+      @marque.value = true
+    end
 
     marque
   end

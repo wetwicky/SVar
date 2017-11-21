@@ -377,7 +377,7 @@ module SVar
     def mutate!
       @mutex.synchronize do
 
-        @is_full.wait( @mutex ) until full? || empty?
+        @is_full.wait( @mutex ) until full?
         @state = :in_evaluation
         @value = yield(@value)
         @state = :full
