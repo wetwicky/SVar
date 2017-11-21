@@ -333,6 +333,8 @@ module SVar
           # On lance un broadcast car il peut y avoir plusieurs threads qui attendent et veulent juste lire
           @is_full.broadcast
         end
+      else
+        DBC.assert(false,"ERREUR, la valeur n'est pas :empty, @state = #{state} ")
       end
     end
   end
