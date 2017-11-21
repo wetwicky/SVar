@@ -387,6 +387,8 @@ module SVar
         @is_full.broadcast
         @value
       end
+      
+      @value
     end
   end
 end

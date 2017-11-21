@@ -165,9 +165,7 @@ class NoeudPar < Noeud
     @mutex = Mutex.new
   end
 
-  # Indice pour optimisation possible: Double-check!
   def marquer!
-    # A COMPLETER.
     marque = nil
     @mutex.synchronize do
       marque = @marque.take
@@ -178,7 +176,6 @@ class NoeudPar < Noeud
   end
 
   def reset_marque
-    # A COMPLETER.
     @marque.mutate! { false }
   end
 
@@ -195,7 +192,6 @@ class NoeudPar < Noeud
   # Peut (devrait!) utiliser des constructions de PRuby!
   #
   def somme
-    # A COMPLETER.
     if marquer!
       # Deja marque, donc on ne le visite pas.
       0

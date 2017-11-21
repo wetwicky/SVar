@@ -86,7 +86,6 @@ class TraiterRequeteThread
   # aussitot que l'une d'entre elles repond positivement.
   #
   def self.run( produit, qte_desiree, id_usager )
-    # A COMPLETER.
     mutex = Mutex.new
     is_assign = ConditionVariable.new
     prix_qte, fournisseur, agence = nil, nil, nil
